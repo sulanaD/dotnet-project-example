@@ -7,4 +7,9 @@
     <RootNamespace>example_web_app</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Security fix: Use secure version of System.Text.Json -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
 </Project>
