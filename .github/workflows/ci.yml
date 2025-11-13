@@ -29,6 +29,9 @@ jobs:
     - name: Build solution
       run: dotnet build example-web-app.sln --no-restore --configuration Release
       
+    - name: Install coverage collector
+      run: dotnet add example-web-app-tests package coverlet.collector
+
     - name: Run tests
       run: |
         mkdir -p ./TestResults
