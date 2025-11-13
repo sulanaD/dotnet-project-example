@@ -5,9 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Sys            var model = viewResult.Model as ErrorViewModel;
-            Assert.IsNotNull(model);
-            Assert.AreEqual(activity.Id, model!.RequestId);.Diagnostics;
+using System.Diagnostics;
 
 namespace example_web_app_tests
 {
