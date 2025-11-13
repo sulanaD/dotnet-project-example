@@ -47,8 +47,9 @@ namespace example_web_app_tests
             using var serviceProvider = services.BuildServiceProvider();
             
             // Assert
-            var mvcOptions = serviceProvider.GetService<Microsoft.AspNetCore.Mvc.MvcOptions>();
-            Assert.IsNotNull(mvcOptions, "MVC options should be registered");
+            // Check for a service that's definitely registered by AddControllersWithViews
+            var actionDescriptorCollectionProvider = serviceProvider.GetService<Microsoft.AspNetCore.Mvc.Infrastructure.IActionDescriptorCollectionProvider>();
+            Assert.IsNotNull(actionDescriptorCollectionProvider, "Action descriptor collection provider should be registered");
         }
 
         [TestMethod]

@@ -153,6 +153,15 @@ namespace example_web_app_tests
         {
             // Arrange
             var controller = new HomeController(_mockLogger.Object);
+            
+            // Setup HttpContext for Error action
+            var mockHttpContext = new Mock<HttpContext>();
+            mockHttpContext.Setup(x => x.TraceIdentifier).Returns("test-trace");
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = mockHttpContext.Object
+            };
+
             var actions = new Func<IActionResult>[]
             {
                 () => controller.Index(),
@@ -174,7 +183,8 @@ namespace example_web_app_tests
         public void HomeController_Constructor_ValidatesLogger()
         {
             // Act & Assert
-            Assert.ThrowsException<ArgumentNullException>(() => new HomeController(null!));
+            var exception = Assert.ThrowsException<ArgumentNullException>(() => new HomeController(null!));
+            Assert.AreEqual("logger", exception.ParamName);
         }
 
         [TestMethod]

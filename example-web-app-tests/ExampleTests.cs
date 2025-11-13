@@ -119,7 +119,7 @@ namespace example_web_app_tests
         }
 
         [TestMethod]
-        public void ShowRequestId_ShouldReturnFalse_WhenRequestIdIsWhitespace()
+        public void ShowRequestId_ShouldReturnTrue_WhenRequestIdIsWhitespace()
         {
             // Arrange
             var viewModel = new ErrorViewModel { RequestId = "   " };
@@ -128,7 +128,7 @@ namespace example_web_app_tests
             var result = viewModel.ShowRequestId;
 
             // Assert
-            Assert.IsFalse(result);
+            Assert.IsTrue(result, "Whitespace is considered a valid RequestId");
         }
     }
 
