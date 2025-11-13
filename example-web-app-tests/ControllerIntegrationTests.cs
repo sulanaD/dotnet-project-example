@@ -15,7 +15,7 @@ namespace example_web_app_tests
     [TestClass]
     public sealed class ControllerIntegrationTests
     {
-        private Mock<ILogger<HomeController>> _mockLogger;
+        private Mock<ILogger<HomeController>> _mockLogger = null!;
 
         [TestInitialize]
         public void Setup()
@@ -201,7 +201,15 @@ namespace example_web_app_tests
             var controller = new HomeController(_mockLogger.Object);
 
             // Act & Assert
-            Assert.DoesNotThrow(() => controller.Dispose());
+            try
+            {
+                controller.Dispose();
+                Assert.IsTrue(true, "Dispose should not throw");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Dispose should not throw: {ex.Message}");
+            }
         }
 
         [TestMethod]

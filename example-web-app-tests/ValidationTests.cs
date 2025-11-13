@@ -103,7 +103,15 @@ namespace example_web_app_tests
             var helloWorld = new HelloWorld();
 
             // Act & Assert
-            Assert.DoesNotThrow(() => helloWorld.GetMessage());
+            try
+            {
+                var result = helloWorld.GetMessage();
+                Assert.IsNotNull(result, "GetMessage should return a value");
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"GetMessage should not throw: {ex.Message}");
+            }
         }
 
         [TestMethod]

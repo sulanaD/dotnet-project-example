@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Diagnostics;
+using Sys            var model = viewResult.Model as ErrorViewModel;
+            Assert.IsNotNull(model);
+            Assert.AreEqual(activity.Id, model!.RequestId);.Diagnostics;
 
 namespace example_web_app_tests
 {
@@ -138,8 +140,8 @@ namespace example_web_app_tests
     [TestClass]
     public sealed class HomeControllerTests
     {
-        private Mock<ILogger<HomeController>> _mockLogger;
-        private HomeController _controller;
+        private Mock<ILogger<HomeController>> _mockLogger = null!;
+        private HomeController _controller = null!;
 
         [TestInitialize]
         public void Setup()
@@ -233,7 +235,7 @@ namespace example_web_app_tests
         public void Constructor_ShouldThrowArgumentNullException_WhenLoggerIsNull()
         {
             // Act & Assert
-            Assert.ThrowsException<ArgumentNullException>(() => new HomeController(null));
+            Assert.ThrowsException<ArgumentNullException>(() => new HomeController(null!));
         }
     }
 
