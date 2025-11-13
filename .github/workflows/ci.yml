@@ -84,13 +84,20 @@ jobs:
       
     - name: Run security scan
       run: |
+        echo "🔍 Scanning for security vulnerabilities..."
         dotnet list package --vulnerable --include-transitive 2>&1 | tee security-scan.txt
-        if grep -q 'vulnerable' security-scan.txt; then
-          echo "Security vulnerabilities found!"
+        if grep -q 'has the following vulnerable packages' security-scan.txt; then
+          echo "❌ Security vulnerabilities found!"
+          echo "📋 Vulnerability details:"
           cat security-scan.txt
+          echo ""
+          echo "🔧 To fix these vulnerabilities:"
+          echo "1. Update the vulnerable packages to their latest secure versions"
+          echo "2. Add explicit package references to override transitive dependencies"
+          echo "3. Verify fixes by running: dotnet list package --vulnerable --include-transitive"
           exit 1
         else
-          echo "No security vulnerabilities found."
+          echo "✅ No security vulnerabilities found."
         fi
         
     - name: Upload security scan results
