@@ -123,13 +123,80 @@ dotnet build --configuration Release
 dotnet publish --configuration Release --output ./publish
 ```
 
-## 🔄 CI/CD and Releases
+## 🔄 CI/CD Pipeline
 
-This project is designed for testing build and release pipelines. The structure supports:
-- Automated building and testing
-- Continuous integration workflows
-- Release automation
-- Deployment strategies
+This project includes a comprehensive CI/CD pipeline using **GitHub Actions** with the following features:
+
+### 🎯 Pipeline Overview
+
+**Main CI Pipeline** (`.github/workflows/ci.yml`):
+- ✅ **Multi-target build** - Supports .NET 8.0
+- 🧪 **Automated testing** - Runs all unit tests with MSTest
+- 📊 **Code coverage** - Generates coverage reports with ReportGenerator
+- 🔒 **Security scanning** - Checks for vulnerable dependencies
+- 📈 **Quality gates** - Ensures all checks pass before success
+
+**PR Validation** (`.github/workflows/pr-validation.yml`):
+- 🎨 **Code formatting** - Validates consistent code style
+- 📊 **Coverage threshold** - Enforces minimum 70% code coverage
+- 🔒 **Security validation** - Blocks PRs with security vulnerabilities
+- 💬 **Automated comments** - Posts validation results on PRs
+
+### 🚀 Triggers
+
+The CI pipeline runs on:
+- **Push** to `main` or `develop` branches
+- **Pull requests** targeting `main` or `develop` branches
+
+### 📊 Pipeline Jobs
+
+1. **Build & Test**
+   - Restores NuGet packages
+   - Builds in Release configuration
+   - Runs unit tests with coverage collection
+   - Uploads coverage reports to Codecov
+   - Publishes test results
+
+2. **Security Scan**
+   - Scans for vulnerable dependencies
+   - Fails pipeline if vulnerabilities found
+   - Uploads security scan artifacts
+
+3. **Quality Gate**
+   - Ensures all previous jobs succeeded
+   - Provides final pass/fail status
+
+### 🛡️ Quality Standards
+
+- **Minimum code coverage**: 70%
+- **Security**: Zero vulnerable dependencies allowed
+- **Code formatting**: Consistent style enforced
+- **All tests must pass**: No failing tests allowed
+
+### 📈 Monitoring & Reporting
+
+- **Test results**: Published to GitHub with detailed reports
+- **Coverage reports**: Available as downloadable artifacts
+- **Security scans**: Results uploaded for review
+- **PR feedback**: Automated comments with validation status
+
+### 🔧 Local Quality Checks
+
+Before pushing code, run these commands locally:
+
+```bash
+# Format code
+dotnet format
+
+# Run all tests with coverage
+dotnet test --collect:"XPlat Code Coverage"
+
+# Check for security vulnerabilities
+dotnet list package --vulnerable --include-transitive
+
+# Build in release mode
+dotnet build --configuration Release
+```
 
 ## 📝 License
 

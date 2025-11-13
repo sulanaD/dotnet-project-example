@@ -1,0 +1,126 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main, develop ]
+
+jobs:
+  pr-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones disabled for better analysis
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore example-web-app.sln
+      
+    - name: Check code formatting
+      run: |
+        dotnet format example-web-app.sln --verify-no-changes --verbosity diagnostic
+        
+    - name: Build solution
+      run: dotnet build example-web-app.sln --no-restore --configuration Release
+      
+    - name: Run tests with coverage
+      run: |
+        dotnet test example-web-app.sln \
+          --no-build \
+          --configuration Release \
+          --verbosity normal \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./coverage \
+          --logger trx \
+          --logger "console;verbosity=detailed"
+          
+    - name: Validate test coverage
+      run: |
+        # Check if we have at least 70% code coverage
+        dotnet tool install -g dotnet-reportgenerator-globaltool
+        reportgenerator -reports:"coverage/**/coverage.cobertura.xml" -targetdir:"coveragereport" -reporttypes:TextSummary
+        
+        coverage=$(grep -oP '(?<=Line coverage: )\d+(?=\.\d+%)' coveragereport/Summary.txt || echo "0")
+        echo "Current line coverage: ${coverage}%"
+        
+        if [ "$coverage" -lt "70" ]; then
+          echo "❌ Code coverage is below 70% threshold (current: ${coverage}%)"
+          exit 1
+        else
+          echo "✅ Code coverage meets threshold (current: ${coverage}%)"
+        fi
+        
+    - name: Check for security vulnerabilities
+      run: |
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee security-check.txt
+        if grep -q 'vulnerable' security-check.txt; then
+          echo "❌ Security vulnerabilities found in dependencies!"
+          cat security-check.txt
+          exit 1
+        else
+          echo "✅ No security vulnerabilities found."
+        fi
+        
+    - name: Comment PR with results
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let comment = '## 🔍 PR Validation Results\n\n';
+          
+          // Add coverage info if available
+          try {
+            const summaryPath = 'coveragereport/Summary.txt';
+            if (fs.existsSync(summaryPath)) {
+              const summary = fs.readFileSync(summaryPath, 'utf8');
+              const coverageMatch = summary.match(/Line coverage: (\d+\.\d+%)/);
+              if (coverageMatch) {
+                const coverage = parseFloat(coverageMatch[1]);
+                const emoji = coverage >= 70 ? '✅' : '❌';
+                comment += `${emoji} **Code Coverage**: ${coverageMatch[1]}\n`;
+              }
+            }
+          } catch (e) {
+            comment += '⚠️ **Code Coverage**: Unable to determine\n';
+          }
+          
+          // Add security scan results
+          try {
+            const securityPath = 'security-check.txt';
+            if (fs.existsSync(securityPath)) {
+              const securityContent = fs.readFileSync(securityPath, 'utf8');
+              const hasVulnerabilities = securityContent.includes('vulnerable');
+              const emoji = hasVulnerabilities ? '❌' : '✅';
+              comment += `${emoji} **Security Scan**: ${hasVulnerabilities ? 'Vulnerabilities found' : 'No vulnerabilities'}\n`;
+            }
+          } catch (e) {
+            comment += '⚠️ **Security Scan**: Unable to determine\n';
+          }
+          
+          comment += '\n---\n*This comment is automatically updated by the PR validation workflow.*';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+          
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: pr-test-results
+        path: |
+          **/*.trx
+          coverage/
+          coveragereport/

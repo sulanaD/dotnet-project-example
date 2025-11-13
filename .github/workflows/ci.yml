@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        dotnet-version: ['8.0.x']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+        
+    - name: Restore dependencies
+      run: dotnet restore example-web-app.sln
+      
+    - name: Build solution
+      run: dotnet build example-web-app.sln --no-restore --configuration Release
+      
+    - name: Run tests
+      run: dotnet test example-web-app.sln --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+      
+    - name: Generate code coverage report
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      with:
+        reports: coverage/**/coverage.cobertura.xml
+        targetdir: coveragereport
+        reporttypes: HtmlInline_AzurePipelines;Cobertura
+        
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./coverage
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        
+    - name: Upload coverage report artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coveragereport/
+        
+    - name: Publish test results
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: Test Results
+        path: '**/*.trx'
+        reporter: dotnet-trx
+        
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore example-web-app.sln
+      
+    - name: Run security scan
+      run: |
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee security-scan.txt
+        if grep -q 'vulnerable' security-scan.txt; then
+          echo "Security vulnerabilities found!"
+          cat security-scan.txt
+          exit 1
+        else
+          echo "No security vulnerabilities found."
+        fi
+        
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-scan-results
+        path: security-scan.txt
+
+  quality-gate:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, security-scan]
+    if: always()
+    
+    steps:
+    - name: Check job status
+      run: |
+        if [[ "${{ needs.build-and-test.result }}" == "failure" || "${{ needs.security-scan.result }}" == "failure" ]]; then
+          echo "Quality gate failed - one or more jobs failed"
+          exit 1
+        else
+          echo "Quality gate passed - all jobs succeeded"
+        fi
