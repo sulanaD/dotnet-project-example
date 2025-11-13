@@ -21,3 +21,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+// Make the Program class accessible to the test project
+public partial class Program { }

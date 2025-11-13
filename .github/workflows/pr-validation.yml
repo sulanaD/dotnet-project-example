@@ -32,12 +32,13 @@ jobs:
       
     - name: Run tests with coverage
       run: |
+        mkdir -p ./TestResults
         dotnet test example-web-app.sln \
           --no-build \
           --configuration Release \
           --verbosity normal \
           --collect:"XPlat Code Coverage" \
-          --results-directory ./coverage \
+          --results-directory ./TestResults \
           --logger trx \
           --logger "console;verbosity=detailed"
           
@@ -45,7 +46,7 @@ jobs:
       run: |
         # Check if we have at least 70% code coverage
         dotnet tool install -g dotnet-reportgenerator-globaltool
-        reportgenerator -reports:"coverage/**/coverage.cobertura.xml" -targetdir:"coveragereport" -reporttypes:TextSummary
+        reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" -targetdir:"coveragereport" -reporttypes:TextSummary
         
         coverage=$(grep -oP '(?<=Line coverage: )\d+(?=\.\d+%)' coveragereport/Summary.txt || echo "0")
         echo "Current line coverage: ${coverage}%"
@@ -121,6 +122,6 @@ jobs:
       with:
         name: pr-test-results
         path: |
-          **/*.trx
-          coverage/
+          TestResults/**/*.trx
+          TestResults/
           coveragereport/

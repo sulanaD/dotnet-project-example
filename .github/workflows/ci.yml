@@ -30,19 +30,21 @@ jobs:
       run: dotnet build example-web-app.sln --no-restore --configuration Release
       
     - name: Run tests
-      run: dotnet test example-web-app.sln --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+      run: |
+        mkdir -p ./TestResults
+        dotnet test example-web-app.sln --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx --logger "console;verbosity=detailed"
       
     - name: Generate code coverage report
       uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
       with:
-        reports: coverage/**/coverage.cobertura.xml
+        reports: TestResults/**/coverage.cobertura.xml
         targetdir: coveragereport
         reporttypes: HtmlInline_AzurePipelines;Cobertura
         
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       with:
-        directory: ./coverage
+        directory: ./TestResults
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
@@ -58,7 +60,7 @@ jobs:
       if: success() || failure()
       with:
         name: Test Results
-        path: '**/*.trx'
+        path: 'TestResults/**/*.trx'
         reporter: dotnet-trx
         
   security-scan:
