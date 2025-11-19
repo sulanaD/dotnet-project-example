@@ -4,15 +4,18 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace example_web_app.Controllers
 {
+    // Main controller for handling home page requests
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
 
+        // Constructor with dependency injection for logger
         public HomeController(ILogger<HomeController> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        // Returns the main landing page view
         public IActionResult Index()
         {
             return View();
